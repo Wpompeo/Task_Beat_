@@ -23,7 +23,9 @@ class MainActivity : AppCompatActivity() {
         Room.databaseBuilder(
             applicationContext,
             TaskBeatDataBase::class.java, "database_taskBeat_"
-        ).build()
+        )
+            .fallbackToDestructiveMigration()
+            .build()
     }
 
     private val categoryDao: CategoryDao by lazy {
@@ -50,11 +52,26 @@ class MainActivity : AppCompatActivity() {
         }
         //DeleteCategory
         categoryAdapter.setOnLongClickListener { categoryToBeDeleted ->
-            val categoryEntityToBeDeleted = CategoryEntity(
-                categoryToBeDeleted.name,
-                categoryToBeDeleted.isSelected
-            )
-            deleteCategory(categoryEntityToBeDeleted)
+            if (categoryToBeDeleted.name != "Add(+)") {
+                val title: String = this.getString(R.string.category_delete_title)
+                val description: String = this.getString(R.string.category_delete_description)
+                val btnTextDeleted: String = this.getString(R.string.delete)
+                val btnTextCancel: String = this.getString(R.string.cancel)
+
+                showInfoDialog(
+                    title,
+                    description,
+                    btnTextDeleted,
+                    btnTextCancel
+                ) {
+                    val categoryEntityToBeDeleted = CategoryEntity(
+                        categoryToBeDeleted.name,
+                        categoryToBeDeleted.isSelected
+                    )
+                    deleteCategory(categoryEntityToBeDeleted)
+
+                }
+            }
         }
         //SelectedCategory
         categoryAdapter.setOnClickListener { selected ->
@@ -68,26 +85,28 @@ class MainActivity : AppCompatActivity() {
                 }
                 createCategoryBottomSheet.show(supportFragmentManager, "createCategoryBottomSheet")
 
-            } else {
+            } else { //selected category
                 val categoryTemp = categories.map { item ->
                     when {
+                        item.name == selected.name && item.isSelected -> item.copy(isSelected = true)
                         item.name == selected.name && !item.isSelected -> item.copy(isSelected = true)
-                        item.name == selected.name && item.isSelected -> item.copy(isSelected = false)
+                        item.name != selected.name && item.isSelected -> item.copy(isSelected = false)
                         else -> item
                     }
                 }
 
-                val taskTemp =
-                    if (selected.name != "ALL") {
-                        tasks.filter { it.category == selected.name }
-                    } else {
-                        tasks
+                if (selected.name != "ALL") {
+                    filterTaskByCategoryName(selected.name)
+                } else {
+                    GlobalScope.launch(Dispatchers.IO) {
+                        getTasksFromDataBase()
                     }
-                taskAdapter.submitList(taskTemp)
+                }
                 categoryAdapter.submitList(categoryTemp)
             }
 
         }
+
         rvCategory.adapter = categoryAdapter
         GlobalScope.launch(Dispatchers.IO) {
             getCategoriesFromDataBase()
@@ -99,7 +118,26 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun showInfoDialog(
+        title: String,
+        description: String,
+        btnTextDeleted: String,
+        btnTextCancel: String,
+        onClick: () -> Unit
+    ) {
+        val infoBottomSheet = InfoBottomSheet(
+            title = title,
+            description = description,
+            btnTextDeleted = btnTextDeleted,
+            btnTextCancel = btnTextCancel,
+            onClick
+        )
+        infoBottomSheet.show(
+            supportFragmentManager,
+            "infoBottomSheet"
+        )
 
+    }
 
     private fun getCategoriesFromDataBase() {
         val categoriesFromDb: List<CategoryEntity> = categoryDao.getAll()
@@ -118,9 +156,16 @@ class MainActivity : AppCompatActivity() {
                 isSelected = false
             )
         )
+        val categoryListTemp = mutableListOf(
+            CategoryUiData(
+                name = "ALL",
+                isSelected = true,
+            )
+        )
+        categoryListTemp.addAll(categoriesUiData)
         GlobalScope.launch(Dispatchers.Main) {
-            categories = categoriesUiData
-            categoryAdapter.submitList(categoriesUiData)
+            categories = categoryListTemp
+            categoryAdapter.submitList(categories)
         }
     }
 
@@ -170,8 +215,27 @@ class MainActivity : AppCompatActivity() {
 
     private fun deleteCategory(categoryEntity: CategoryEntity) {
         GlobalScope.launch(Dispatchers.IO) {
+            val tasksToBeDeleted = taskDao.getAllByCategoryName(categoryEntity.name)
+            taskDao.deleteAll(tasksToBeDeleted)
             categoryDao.delete(categoryEntity)
             getCategoriesFromDataBase()
+            getTasksFromDataBase()
+        }
+    }
+
+    private fun filterTaskByCategoryName(category: String) {
+        GlobalScope.launch(Dispatchers.IO) {
+            val tasksFromDb: List<TaskEntity> = taskDao.getAllByCategoryName(category)
+            val tasksUiData: List<TaskUiData> = tasksFromDb.map {
+                TaskUiData(
+                    id = it.id,
+                    name = it.name,
+                    category = it.category
+                )
+            }
+            GlobalScope.launch(Dispatchers.Main) {
+                taskAdapter.submitList(tasksUiData)
+            }
         }
     }
 
