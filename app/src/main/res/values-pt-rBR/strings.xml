@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Minhas tarefas</string>
+    <string name="home_title">Minhas tarefas</string>
+    <string name="home_sub_title">Seu controlador de tarefas</string>
+    <string name="create_task_tittle">Criar tarefa</string>
+    <string name="create">criar</string>
+    <string name="update_task_title">Atualizar tarefa</string>
+    <string name="update">atualizar</string>
+    <string name="delete">deletar</string>
+    <string name="cancel">cancelar</string>
+    <string name="category_delete_title">Atenção</string>
+    <string name="category_delete_description">Ao excluir uma categoria, você exclui todas as tarefas dessa categoria. Continuar?</string>
+    <string name="empty_category_title">Nenhuma categoria encontrada!</string>
+    <string name="empty_category_description">por favor crie uma categoria.</string>
+</resources>
