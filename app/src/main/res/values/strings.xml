@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">TaskBeats</string>
     <string name="home_title">Task Beat</string>
+    <string name="home_sub_title">Your task controller</string>
     <string name="create_task_tittle">Create task</string>
     <string name="create">create</string>
     <string name="update_task_title">Update task</string>
@@ -9,4 +10,6 @@
     <string name="cancel">cancel</string>
     <string name="category_delete_title">Warning</string>
     <string name="category_delete_description">By deleting a category you delete all tasks with this category, are you sure?</string>
+    <string name="empty_category_title">No category found!</string>
+    <string name="empty_category_description">please create a new one</string>
 </resources>
