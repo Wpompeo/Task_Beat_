@@ -35,7 +35,7 @@ Screenshots
   - FindViewById
   - ViewBinding
   - Button
-  - Snipper
+  - Spinner
 
 ## License
 ```
